@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>惊喜礼包</title>
+    <style>
+        /* --- 基础重置 --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #111;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        /* --- 页面通用容器 --- */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            transition: opacity 0.8s ease;
+        }
+        .page.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* ================= 第一页：礼物盒 ================= */
+        .hint {
+            position: absolute; bottom: 15%; width: 100%; text-align: center;
+            color: rgba(255, 255, 255, 0.6); font-size: 14px; letter-spacing: 2px;
+            animation: breathe 2s infinite ease-in-out; z-index: 10;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .gift-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            cursor: pointer; z-index: 20; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .gift-box {
+            width: 120px; height: 100px; background-color: #ff4757;
+            position: relative; border-radius: 8px; box-shadow: 0 10px 20px rgba(255, 71, 87, 0.4);
+        }
+        .gift-box::before {
+            content: ''; position: absolute; top: -15px; left: -10px;
+            width: 140px; height: 30px; background-color: #ff6b81;
+            border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .gift-box::after {
+            content: ''; position: absolute; top: -15px; left: 50px;
+            width: 20px; height: 115px; background-color: #f1c40f;
+        }
+        .bow {
+            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            width: 50px; height: 25px; background-color: #f1c40f;
+            border-radius: 50% 50% 0 0; z-index: 2;
+        }
+        .bow::before, .bow::after {
+            content: ''; position: absolute; top: 0; width: 30px; height: 40px;
+            background-color: #f1c40f; border-radius: 50%;
+        }
+        .bow::before { left: -25px; transform: rotate(-30deg); }
+        .bow::after { right: -25px; transform: rotate(30deg); }
+        .gift-container.opened {
+            transform: translate(-50%, -50%) scale(1.5); opacity: 0; pointer-events: none;
+        }
+
+        /* ================= 第二页：文字矩阵 ================= */
+        .text-column {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; align-items: center;
+            gap: 20px; z-index: 15;
+        }
+        .column-left { left: 25%; }
+        .column-right { right: 25%; }
+        .corner-char {
+            position: absolute; color: #f1c40f; font-size: 45px; font-weight: bold;
+            text-shadow: 0 0 15px rgba(241, 196, 15, 0.8); opacity: 0; z-index: 15;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .pos-tl { top: 10%; left: 10%; }
+        .pos-tr { top: 10%; right: 10%; }
+        .pos-bl { bottom: 10%; left: 10%; }
+        .pos-br { bottom: 10%; right: 10%; }
+        .char {
+            color: #f1c40f; font-size: 60px; font-weight: bold;
+            text-shadow: 0 0 20px rgba(241, 196, 15, 0.8);
+            opacity: 0; transform: translateY(20px);
+        }
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(30px) scale(0.8); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .char.show, .corner-char.show {
+            animation: fadeUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* ================= 第三页：一次性小狗口罩 ================= */
+        #page3 {
+            display: flex; justify-content: center; align-items: center;
+            background-color: #f0f0f0;
+        }
+        .mask-click-area {
+            position: relative; width: 260px; height: 200px; cursor: pointer;
+            transition: transform 0.2s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+        }
+        .mask-click-area:active { transform: scale(0.95); }
+        .ear-loop {
+            position: absolute; top: 20px; width: 60px; height: 150px;
+            border: 3px solid #c9c9c9; border-radius: 50%;
+        }
+        .loop-left { left: -30px; border-right: none; }
+        .loop-right { right: -30px; border-left: none; }
+        .mask-body {
+            position: absolute; width: 100%; height: 100%;
+            background-color: #fff; border-radius: 20px 20px 60px 60px / 40px 40px 100px 100px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), inset 0 -15px 20px rgba(0,0,0,0.05);
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+        .fold {
+            width: 100%; height: 4px; background-color: rgba(0,0,0,0.06);
+            box-shadow: 0 2px 3px rgba(255,255,255,0.8);
+            position: absolute; left: 0;
+        }
+        .fold-1 { top: 30%; }
+        .fold-2 { top: 50%; }
+        .fold-3 { top: 70%; }
+        .dog-face-svg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 140px; height: 120px; z-index: 2;
+        }
+
+        /* ================= 第四页：文字与漫画风水滩 ================= */
+        #page4 {
+            display: flex; justify-content: center; align-items: center;
+            background-color: #1a1a1a;
+        }
+        .text-hint {
+            color: #fff; font-size: 38px; font-weight: bold; letter-spacing: 4px;
+            opacity: 0; z-index: 10; transform: scale(0.8);
+            transition: all 0.5s ease-out; text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            position: absolute; top: 40%; /* 文字稍微往上挪一点，留出水的位置 */
+        }
+        .text-hint.show { opacity: 1; transform: scale(1); }
+
+        /* 水滩容器 */
+        .splash-container {
+            position: absolute;
+            top: 55%; left: 50%;
+            width: 350px; height: 350px;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        /* 漫画水花泼溅动画 */
+        @keyframes splashPop {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .splash-container.show {
+            animation: splashPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 让周边的小水珠有轻微的浮动感 */
+        @keyframes floatDrops {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+        .floating-drops {
+            animation: floatDrops 3s infinite ease-in-out;
+        }
+
+        /* ================= 新增：擦干净按钮 ================= */
+        .wipe-btn {
+            position: absolute; left: 50%; bottom: 6%;
+            transform: translateX(-50%);
+            z-index: 30; padding: 12px 34px;
+            font-size: 20px; font-weight: bold; letter-spacing: 3px;
+            color: #1a1a1a; background: linear-gradient(180deg, #fdf6e3, #f1e2c0);
+            border: 3px solid #1a1a1a; border-radius: 999px;
+            box-shadow: 0 6px 0 #1a1a1a, 0 12px 18px rgba(0,0,0,.45);
+            cursor: pointer;
+            transition: opacity .5s ease;
+        }
+        .wipe-btn:active {
+            transform: translateX(-50%) translateY(5px);
+            box-shadow: 0 1px 0 #1a1a1a, 0 6px 12px rgba(0,0,0,.4);
+        }
+        .wipe-btn.gone { opacity: 0; pointer-events: none; }
+
+        /* 水滩被擦掉：1 秒内淡出 + 缩小 + 模糊 */
+        @keyframes wipeOut {
+            0%   { opacity: 1; transform: translate(-50%, -50%) scale(1);  filter: blur(0px); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(.8); filter: blur(8px); }
+        }
+        .splash-container.wipe {
+            animation: wipeOut 1s ease-in forwards;
+            pointer-events: none;
+        }
+
+        /* ================= 新增：大黄军靴 ================= */
+        .boot {
+            position: absolute; left: 50%; top: 50%;
+            width: min(42vw, 200px); aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0; z-index: 40; pointer-events: none;
+            filter: drop-shadow(0 12px 14px rgba(0,0,0,.55));
+        }
+        /* 从右上抛来：持续翻转 + 从小到大 + 末尾过冲砸定 */
+        @keyframes bootThrow {
+            0%   { opacity: 0; transform: translate(calc(-50% + 34vw), calc(-50% - 34vh)) rotate(0deg)     scale(.15); }
+            10%  { opacity: 1; }
+            40%  { transform: translate(calc(-50% + 18vw), calc(-50% - 14vh)) rotate(-260deg) scale(.55); }
+            72%  { transform: translate(calc(-50% +  4vw), calc(-50% +  6vh)) rotate(-620deg) scale(.95); }
+            88%  { transform: translate(calc(-50% - 2vw), calc(-50% +  1vh)) rotate(-700deg) scale(1.06); }
+            100% { opacity: 1; transform: translate(-50%, -50%) rotate(-720deg) scale(1); }
+        }
+        .boot.throw {
+            animation: bootThrow 1.5s cubic-bezier(.22,.8,.36,1) forwards;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 第一页 -->
+    <div id="page1" class="page">
+        <div class="hint" id="hint1">点击打开礼包</div>
+        <div class="gift-container" id="giftBox">
+            <div class="bow"></div>
+            <div class="gift-box"></div>
+        </div>
+    </div>
+
+    <!-- 第二页 -->
+    <div id="page2" class="page hidden">
+        <div class="text-column column-left" id="colLeft"></div>
+        <div class="text-column column-right" id="colRight"></div>
+        <div class="corner-char pos-tl" id="corner1"></div>
+        <div class="corner-char pos-tr" id="corner2"></div>
+        <div class="corner-char pos-bl" id="corner3"></div>
+        <div class="corner-char pos-br" id="corner4"></div>
+    </div>
+
+    <!-- 第三页 -->
+    <div id="page3" class="page hidden">
+        <div class="mask-click-area" id="dogMask">
+            <div class="ear-loop loop-left"></div>
+            <div class="ear-loop loop-right"></div>
+            <div class="mask-body">
+                <div class="fold fold-1"></div>
+                <div class="fold fold-2"></div>
+                <div class="fold fold-3"></div>
+            </div>
+            <svg class="dog-face-svg" viewBox="0 0 100 100">
+                <ellipse cx="25" cy="30" rx="12" ry="20" fill="#E6A85C" transform="rotate(-20 25 30)"/>
+                <ellipse cx="75" cy="30" rx="12" ry="20" fill="#E6A85C" transform="rotate(20 75 30)"/>
+                <ellipse cx="25" cy="30" rx="6" ry="12" fill="#C47E3B" transform="rotate(-20 25 30)"/>
+                <ellipse cx="75" cy="30" rx="6" ry="12" fill="#C47E3B" transform="rotate(20 75 30)"/>
+                <ellipse cx="50" cy="55" rx="35" ry="30" fill="#FDF5E6"/>
+                <circle cx="38" cy="48" r="4" fill="#333"/>
+                <circle cx="62" cy="48" r="4" fill="#333"/>
+                <circle cx="39" cy="47" r="1.5" fill="#fff"/>
+                <circle cx="63" cy="47" r="1.5" fill="#fff"/>
+                <ellipse cx="50" cy="60" rx="6" ry="4" fill="#333"/>
+                <path d="M 50 64 Q 45 70 40 66" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                <path d="M 50 64 Q 55 70 60 66" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                <path d="M 46 67 Q 50 75 54 67 Z" fill="#FF8C9A"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 第四页 -->
+    <div id="page4" class="page hidden">
+        <div class="text-hint" id="textHint">你有意思吗</div>
+
+        <!-- 完全按照参考图绘制的 SVG 漫画水滩 -->
+        <div class="splash-container" id="splashContainer">
+            <svg viewBox="0 0 300 300" width="100%" height="100%">
+                <!-- 定义水滩的填充色和描边色 -->
+                <defs>
+                    <style>
+                        .water-body { fill: #74C8EE; stroke: #1A1A1A; stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+                        .water-line { fill: none; stroke: #1A1A1A; stroke-width: 4; stroke-linecap: round; }
+                    </style>
+                </defs>
+
+                <!-- 外围飞溅的水珠 -->
+                <g class="water-body floating-drops">
+                    <!-- 左上小水滴 -->
+                    <path d="M 65 50 C 75 40, 90 45, 85 60 C 80 75, 60 65, 65 50 Z" />
+                    <!-- 顶部大水滴 -->
+                    <path d="M 185 35 C 200 20, 215 45, 205 65 C 195 85, 175 75, 185 35 Z" />
+                    <!-- 左侧飞溅 -->
+                    <path d="M 40 110 C 25 90, 60 85, 65 100 C 70 115, 50 120, 40 110 Z" />
+                    <!-- 右侧飞溅 -->
+                    <path d="M 260 150 C 275 160, 265 185, 245 170 C 235 160, 245 140, 260 150 Z" />
+                    <!-- 右下方飞溅 -->
+                    <path d="M 245 245 C 260 260, 230 285, 215 265 C 205 245, 230 235, 245 245 Z" />
+                    <!-- 底部飞溅 -->
+                    <path d="M 75 260 C 95 280, 70 290, 55 275 C 45 260, 60 250, 75 260 Z" />
+                </g>
+
+                <!-- 散落的小点 -->
+                <g class="water-body">
+                    <path d="M 90 285 C 95 285, 95 290, 90 290 C 85 290, 85 285, 90 285 Z" />
+                    <path d="M 120 275 C 125 275, 125 280, 120 280 C 115 280, 115 275, 120 275 Z" />
+                    <path d="M 160 285 C 165 285, 165 290, 160 290 C 155 290, 155 285, 160 285 Z" />
+                    <path d="M 250 100 C 255 100, 255 105, 250 105 C 245 105, 245 100, 250 100 Z" />
+                </g>
+
+                <!-- 水滩主体不规则轮廓 -->
+                <path class="water-body" d="
+                    M 80 100
+                    C 120 90, 130 60, 160 70
+                    C 180 75, 190 90, 210 100
+                    C 230 110, 260 100, 260 140
+                    C 260 170, 240 180, 250 210
+                    C 255 230, 230 250, 200 240
+                    C 170 230, 150 260, 110 250
+                    C 80 240, 60 260, 50 220
+                    C 40 180, 30 160, 50 130
+                    C 60 115, 60 105, 80 100 Z" />
+
+                <!-- 水滩内部的漩涡波纹 -->
+                <g class="water-line">
+                    <!-- 外圈 -->
+                    <path d="M 90 150 C 110 110, 180 120, 200 160 C 220 200, 170 230, 130 210 C 90 190, 80 160, 110 145 C 140 130, 180 150, 180 180 C 180 200, 150 200, 140 180 C 130 160, 150 155, 155 165" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- 新增：擦干净按钮 -->
+        <button class="wipe-btn" id="wipeBtn">擦干净</button>
+
+        <!-- 新增：大黄军靴 -->
+        <div class="boot" id="boot">
+            <svg viewBox="0 0 120 120" width="100%" height="100%">
+                <defs>
+                    <style>
+                        .boot-body { fill: #E8B04B; stroke: #1A1A1A; stroke-width: 5; stroke-linejoin: round; }
+                        .boot-dark { fill: #C4862B; stroke: #1A1A1A; stroke-width: 4; stroke-linejoin: round; }
+                        .boot-line { fill: none; stroke: #1A1A1A; stroke-width: 4; stroke-linecap: round; }
+                    </style>
+                </defs>
+                <!-- 靴筒与鞋身 -->
+                <path class="boot-body" d="M100 6 L66 6 C64 30 66 46 68 58 C52 62 34 64 20 70 C8 76 6 88 10 98 L100 98 C106 88 106 68 104 48 C103 30 102 16 100 6 Z"/>
+                <!-- 靴口 -->
+                <path class="boot-dark" d="M66 6 L100 6 L101 20 L65 20 Z"/>
+                <!-- 加厚大底 -->
+                <path class="boot-dark" d="M9 88 C5 94 6 100 12 102 L100 102 C104 98 104 92 100 88 Z"/>
+                <!-- 鞋头包边 -->
+                <path class="boot-dark" d="M20 70 C9 76 6 86 10 96 L26 92 C24 82 26 74 30 68 Z"/>
+                <!-- 鞋带 -->
+                <g class="boot-line">
+                    <path d="M70 30 L88 26"/><path d="M70 40 L89 36"/>
+                    <path d="M71 50 L90 46"/><path d="M72 60 L91 56"/>
+                </g>
+                <!-- 高光 -->
+                <path class="boot-line" stroke="#FFF3D0" stroke-width="3" d="M96 26 C97 44 97 60 95 74"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 音乐 -->
+    <audio id="bgm" src="tzxs.mp3" loop></audio>
+
+    <script>
+        const page1 = document.getElementById('page1');
+        const page2 = document.getElementById('page2');
+        const page3 = document.getElementById('page3');
+        const page4 = document.getElementById('page4');
+
+        const giftBox = document.getElementById('giftBox');
+        const hint1 = document.getElementById('hint1');
+        const bgm = document.getElementById('bgm');
+
+        const colLeft = document.getElementById('colLeft');
+        const colRight = document.getElementById('colRight');
+        const corners = [
+            document.getElementById('corner1'), document.getElementById('corner2'),
+            document.getElementById('corner3'), document.getElementById('corner4')
+        ];
+
+        const dogMask = document.getElementById('dogMask');
+        const textHint = document.getElementById('textHint');
+        const splashContainer = document.getElementById('splashContainer');
+        const wipeBtn = document.getElementById('wipeBtn');
+        const boot = document.getElementById('boot');
+
+        let isPlaying = false;
+
+        // 第一页 -> 第二页
+        giftBox.addEventListener('click', () => {
+            if (isPlaying) return;
+            isPlaying = true;
+            hint1.style.display = 'none';
+            giftBox.classList.add('opened');
+            bgm.play().catch(e => console.log("音乐播放失败:", e));
+
+            setTimeout(() => {
+                page1.classList.add('hidden');
+                page2.classList.remove('hidden');
+                startTextAnimation();
+            }, 600);
+        });
+
+        async function startTextAnimation() {
+            const textArray = ['杨', '行', '之'];
+
+            for (let i = 0; i < textArray.length; i++) {
+                createAndShowChar(colLeft, textArray[i], 'char');
+                await sleep(500);
+            }
+            await sleep(300);
+
+            for (let i = 0; i < textArray.length; i++) {
+                createAndShowChar(colRight, textArray[i], 'char');
+                await sleep(500);
+            }
+            await sleep(400);
+
+            for (let i = 0; i < corners.length; i++) {
+                const corner = corners[i];
+                corner.innerHTML = '<span class="char" style="font-size:40px;">行</span><span class="char" style="font-size:40px;">之</span>';
+                const spans = corner.querySelectorAll('.char');
+                void corner.offsetWidth;
+                corner.classList.add('show');
+                spans[0].classList.add('show');
+                await sleep(150);
+                spans[1].classList.add('show');
+                await sleep(400);
+            }
+
+            await sleep(1500);
+            page2.classList.add('hidden');
+            page3.classList.remove('hidden');
+        }
+
+        function createAndShowChar(container, charText, className) {
+            const span = document.createElement('span');
+            span.className = className;
+            span.innerText = charText;
+            container.appendChild(span);
+            void span.offsetWidth;
+            span.classList.add('show');
+        }
+
+        // 第三页 -> 第四页（加防连点）
+        let maskClicked = false;
+        dogMask.addEventListener('click', () => {
+            if (maskClicked) return;
+            maskClicked = true;
+
+            page3.classList.add('hidden');
+            page4.classList.remove('hidden');
+
+            // 显示文字
+            setTimeout(() => {
+                textHint.classList.add('show');
+            }, 300);
+
+            // 2秒后水泼出来
+            setTimeout(() => {
+                splashContainer.classList.add('show');
+            }, 2000);
+        });
+
+        // 第四页 -> 擦干净 -> 大黄军靴抛出
+        let isWiped = false;
+        wipeBtn.addEventListener('click', () => {
+            if (isWiped) return;
+            isWiped = true;
+
+            wipeBtn.classList.add('gone');
+            // 先去掉 show，让 wipe 动画独占 transform，避免两个动画冲突
+            splashContainer.classList.remove('show');
+            splashContainer.classList.add('wipe');
+
+            // 水滩擦除 1s + 停顿 0.7s = 1700ms 后军靴抛出，飞行 1.5s
+            setTimeout(() => {
+                boot.classList.add('throw');
+            }, 1700);
+        });
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
